@@ -13,24 +13,38 @@ const port = process.env.PORT || 3000;
 app.use(cors());
 app.use(express.json());
 
-// Initialize database and create tables
-initializeDatabase();
-
-// Routes
-app.use('/api', schoolRoutes);
-
 // Basic route for testing
 app.get('/', (req, res) => {
   res.json({ message: 'School Management API is running' });
 });
 
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
-});
+// Initialize database and create tables
+const startServer = async () => {
+  try {
+    // Initialize database
+    await initializeDatabase();
+    
+    // Routes
+    app.use('/api', schoolRoutes);
 
-// Start server
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
-}); 
+    // Error handling middleware
+    app.use((err, req, res, next) => {
+      console.error('Error:', err);
+      res.status(500).json({ 
+        error: 'Something went wrong!',
+        details: process.env.NODE_ENV === 'development' ? err.message : undefined
+      });
+    });
+
+    // Start server
+    app.listen(port, () => {
+      console.log(`Server is running on port ${port}`);
+      console.log('Environment:', process.env.NODE_ENV || 'development');
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+startServer(); 
