@@ -6,40 +6,21 @@ dotenv.config();
 // Log available environment variables (without sensitive data)
 console.log('Available env vars:', {
   DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not Set',
-  MYSQL_URL: process.env.MYSQL_URL ? 'Set' : 'Not Set',
   NODE_ENV: process.env.NODE_ENV
 });
 
-let connectionConfig;
+// Parse DATABASE_URL
+const dbUrl = new URL(process.env.DATABASE_URL || 'mysql://root:@localhost:3306/school_management');
 
-// Railway specific configuration
-if (process.env.RAILWAY_ENVIRONMENT) {
-  console.log('Running on Railway, using Railway configuration');
-  const dbUrl = new URL(process.env.DATABASE_URL || process.env.MYSQL_URL);
-  connectionConfig = {
-    host: dbUrl.hostname,
-    user: dbUrl.username,
-    password: dbUrl.password,
-    database: dbUrl.pathname.substr(1),
-    port: Number(dbUrl.port),
-    ssl: {
-      rejectUnauthorized: false
-    }
-  };
-} else {
-  console.log('Running locally, using local configuration');
-  connectionConfig = {
-    host: process.env.DB_HOST || 'localhost',
-    user: process.env.DB_USER || 'root',
-    password: process.env.DB_PASSWORD || '',
-    database: process.env.DB_NAME || 'school_management',
-    port: process.env.DB_PORT || 3306
-  };
-}
-
-// Add common pool configuration
-connectionConfig = {
-  ...connectionConfig,
+const connectionConfig = {
+  host: dbUrl.hostname,
+  user: dbUrl.username,
+  password: dbUrl.password,
+  database: dbUrl.pathname.substring(1),
+  port: Number(dbUrl.port),
+  ssl: {
+    rejectUnauthorized: false
+  },
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -48,11 +29,11 @@ connectionConfig = {
 };
 
 console.log('Database connection config:', {
-  ...connectionConfig,
-  password: '****',  // Hide password in logs
   host: connectionConfig.host,
   port: connectionConfig.port,
-  database: connectionConfig.database
+  user: connectionConfig.user,
+  database: connectionConfig.database,
+  ssl: connectionConfig.ssl
 });
 
 const pool = mysql.createPool(connectionConfig).promise();
