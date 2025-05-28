@@ -1,8 +1,10 @@
-const express = require('express');
-const cors = require('cors');
-require('dotenv').config();
-const { initializeDatabase } = require('./config/database');
-const schoolRoutes = require('./routes/schoolRoutes');
+import express from 'express';
+import cors from 'cors';
+import dotenv from 'dotenv';
+import { initializeDatabase } from './config/database.js';
+import schoolRoutes from './routes/schoolRoutes.js';
+
+dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
