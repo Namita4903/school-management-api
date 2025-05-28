@@ -4,21 +4,21 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 // Log available environment variables (without sensitive data)
-console.log('Available env vars:', {
-  DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not Set',
+console.log('Environment:', {
   NODE_ENV: process.env.NODE_ENV,
-  RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT
+  DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not Set'
 });
 
-// Parse DATABASE_URL
-const dbUrl = new URL(process.env.DATABASE_URL || 'mysql://root:@localhost:3306/school_management');
-
+// Configure database connection
 const connectionConfig = {
-  host: process.env.RAILWAY_ENVIRONMENT ? 'mysql.railway.internal' : dbUrl.hostname,
-  user: dbUrl.username,
-  password: dbUrl.password,
-  database: dbUrl.pathname.substring(1),
-  port: process.env.RAILWAY_ENVIRONMENT ? 3306 : Number(dbUrl.port),
+  host: process.env.DB_HOST || 'tramway.proxy.rlwy.net',
+  user: process.env.DB_USER || 'root',
+  password: process.env.DB_PASSWORD,
+  database: process.env.DB_NAME || 'railway',
+  port: parseInt(process.env.DB_PORT || '11804'),
+  ssl: {
+    rejectUnauthorized: false
+  },
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -26,20 +26,12 @@ const connectionConfig = {
   keepAliveInitialDelay: 0
 };
 
-// Only add SSL if not in Railway environment (not needed for internal connections)
-if (!process.env.RAILWAY_ENVIRONMENT) {
-  connectionConfig.ssl = {
-    rejectUnauthorized: false
-  };
-}
-
 console.log('Database connection config:', {
   host: connectionConfig.host,
   port: connectionConfig.port,
   user: connectionConfig.user,
   database: connectionConfig.database,
-  ssl: connectionConfig.ssl ? 'enabled' : 'disabled',
-  environment: process.env.RAILWAY_ENVIRONMENT || 'local'
+  ssl: 'enabled'
 });
 
 const pool = mysql.createPool(connectionConfig).promise();
@@ -52,6 +44,13 @@ const testConnection = async () => {
     return true;
   } catch (error) {
     console.error('Database connection failed:', error);
+    // Log more details about connection config (excluding sensitive data)
+    console.error('Connection details:', {
+      host: connectionConfig.host,
+      port: connectionConfig.port,
+      user: connectionConfig.user,
+      database: connectionConfig.database
+    });
     return false;
   }
 };
