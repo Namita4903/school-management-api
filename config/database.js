@@ -6,21 +6,19 @@ dotenv.config();
 // Log available environment variables (without sensitive data)
 console.log('Available env vars:', {
   DATABASE_URL: process.env.DATABASE_URL ? 'Set' : 'Not Set',
-  NODE_ENV: process.env.NODE_ENV
+  NODE_ENV: process.env.NODE_ENV,
+  RAILWAY_ENVIRONMENT: process.env.RAILWAY_ENVIRONMENT
 });
 
 // Parse DATABASE_URL
 const dbUrl = new URL(process.env.DATABASE_URL || 'mysql://root:@localhost:3306/school_management');
 
 const connectionConfig = {
-  host: dbUrl.hostname,
+  host: process.env.RAILWAY_ENVIRONMENT ? 'mysql.railway.internal' : dbUrl.hostname,
   user: dbUrl.username,
   password: dbUrl.password,
   database: dbUrl.pathname.substring(1),
-  port: Number(dbUrl.port),
-  ssl: {
-    rejectUnauthorized: false
-  },
+  port: process.env.RAILWAY_ENVIRONMENT ? 3306 : Number(dbUrl.port),
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,
@@ -28,12 +26,20 @@ const connectionConfig = {
   keepAliveInitialDelay: 0
 };
 
+// Only add SSL if not in Railway environment (not needed for internal connections)
+if (!process.env.RAILWAY_ENVIRONMENT) {
+  connectionConfig.ssl = {
+    rejectUnauthorized: false
+  };
+}
+
 console.log('Database connection config:', {
   host: connectionConfig.host,
   port: connectionConfig.port,
   user: connectionConfig.user,
   database: connectionConfig.database,
-  ssl: connectionConfig.ssl
+  ssl: connectionConfig.ssl ? 'enabled' : 'disabled',
+  environment: process.env.RAILWAY_ENVIRONMENT || 'local'
 });
 
 const pool = mysql.createPool(connectionConfig).promise();
