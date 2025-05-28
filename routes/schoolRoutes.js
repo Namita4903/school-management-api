@@ -23,7 +23,7 @@ router.post('/addSchool', validateSchool, async (req, res) => {
 
     const { name, address, latitude, longitude } = req.body;
     
-    const [result] = await pool.promise().execute(
+    const [result] = await pool.execute(
       'INSERT INTO schools (name, address, latitude, longitude) VALUES (?, ?, ?, ?)',
       [name, address, latitude, longitude]
     );
@@ -64,7 +64,7 @@ router.get('/listSchools', [
     }
 
     const { latitude, longitude } = req.query;
-    const [schools] = await pool.promise().query('SELECT * FROM schools');
+    const [schools] = await pool.query('SELECT * FROM schools');
 
     // Calculate distance for each school and add it to the school object
     const schoolsWithDistance = schools.map(school => ({
